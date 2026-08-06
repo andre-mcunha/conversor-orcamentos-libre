@@ -31,7 +31,7 @@ def configurar_ia():
 
 def extrair_dados_da_imagem(imagem):
     """Envia a imagem para o Gemini e devolve os dados estruturados."""
-    model = genai.GenerativeModel('gemini-1.5-pro')
+    model = genai.GenerativeModel('gemini-3.5-flash-lite')
     prompt = """
     Lê as anotações desta imagem referentes a um orçamento. 
     Extrai o nome do cliente, a morada do cliente (se existirem) e a informação para preencher a tabela de trabalhos/materiais.
