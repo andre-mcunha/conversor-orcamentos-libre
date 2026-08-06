@@ -1,0 +1,15 @@
+# Pastas de ambientes virtuais (são pesadas e cada computador deve ter a sua)
+venv/
+env/
+
+# Ficheiros de configuração com passwords/chaves (Segurança Máxima)
+.env
+
+# Ficheiros gerados temporariamente pela App
+orcamento_final.docx
+orcamento_final.pdf
+
+# Ficheiros de sistema e cache do Python
+__pycache__/
+*.pyc
+.DS_Store
