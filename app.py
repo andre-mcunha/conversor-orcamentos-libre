@@ -147,6 +147,19 @@ def main():
     configurar_ia()
     
     st.set_page_config(page_title="Conversor de Orçamentos", layout="centered")
+
+    try:
+        PASSWORD_SISTEMA = st.secrets["APP_PASSWORD"]
+    except Exception:
+        PASSWORD_SISTEMA = os.getenv("APP_PASSWORD")
+
+    # Desenha a caixa de password
+    pwd_inserida = st.text_input("Insira a password para aceder:", type="password")
+
+    # Se a password estiver errada ou vazia, paramos a aplicação aqui!
+    if pwd_inserida != PASSWORD_SISTEMA:
+        st.stop()
+
     st.title("Orçamentos Papel para PDF")
 
     # Iniciar estado da memória para a tabela e inputs
