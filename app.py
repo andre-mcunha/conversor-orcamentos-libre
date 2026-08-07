@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 from google import genai
 from PIL import Image
 from xhtml2pdf import pisa
+from supabase import create_client, Client
 
 load_dotenv()
 
@@ -38,9 +39,23 @@ except Exception:
     API_KEY = os.getenv("API_KEY")
 
 try:
-    PASSWORD_SISTEMA = st.secrets["APP_PASSWORD"]
+    SUPABASE_URL = st.secrets["SUPABASE_URL"]
 except Exception:
-    PASSWORD_SISTEMA = os.getenv("APP_PASSWORD")
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+
+try:
+    SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+except Exception:
+    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# Inicializar o cliente Supabase de forma segura
+@st.cache_resource
+def init_supabase():
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return None
+    return create_client(SUPABASE_URL, SUPABASE_KEY)
+
+supabase = init_supabase()
 
 
 COLUNAS_TABELA = ["Designação", "Unidade", "Quantidade", "Preço Unitário (€)"]
@@ -520,19 +535,34 @@ def gerar_documento(nome_cliente, morada_cliente, dataframe_tabela, pagamento, n
 # =========================================================================
 
 def ecra_login():
-    st.markdown('<div class="login-card">', unsafe_allow_html=True)
-    st.markdown("### Acesso Reservado")
-    st.markdown("Introduza a password para continuar.")
-    senha = st.text_input(
-        "Password", type="password", label_visibility="collapsed", placeholder="Password"
-    )
+    st.markdown("### Bem-vindo(a) ao Orçamentos")
+    st.markdown("Introduza os seus dados para entrar.")
+    
+    email = st.text_input("Email", placeholder="O seu email", key="login_email")
+    senha = st.text_input("Password", type="password", placeholder="A sua password", key="login_senha")
+    
     entrar = st.button("Entrar", use_container_width=True, type="primary")
+    
     if entrar:
-        if PASSWORD_SISTEMA and senha == PASSWORD_SISTEMA:
-            st.session_state.autenticado = True
-            st.rerun()
+        if not supabase:
+            st.error("Erro de configuração: As chaves do Supabase não estão definidas.")
+        elif not email or not senha:
+            st.warning("Por favor, preencha o email e a password.")
         else:
-            st.error("Password incorreta. Tente novamente.")
+            try:
+                # Validação real via Supabase Auth
+                resposta = supabase.auth.sign_in_with_password({"email": email, "password": senha})
+                
+                # Se passou sem lançar exceção, o login foi bem sucedido
+                st.session_state.autenticado = True
+                st.session_state.user_id = resposta.user.id
+                st.session_state.user_email = resposta.user.email
+                st.rerun()
+            except Exception as e:
+                st.error("Email ou password incorretos.")
+                with st.expander("Detalhes"):
+                    st.code(str(e))
+                    
     st.markdown("</div>", unsafe_allow_html=True)
 
 
