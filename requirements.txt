@@ -4,3 +4,5 @@ pandas
 python-docx
 pillow
 python-dotenv
+supabase==2.3.4
+xhtml2pdf==0.2.17
