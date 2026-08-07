@@ -643,7 +643,7 @@ def passo_3_download():
         st.session_state.passo = 1
         st.rerun()
 
-    st.markdown("##Orçamento Pronto")
+    st.markdown("## Orçamento Pronto")
     st.success("O PDF foi gerado com sucesso.")
 
     nome_base = (st.session_state.get("nome_cliente_final") or "cliente").strip()
