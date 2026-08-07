@@ -1,5 +1,5 @@
 """
-Orçamentos — Papel para PDF
+Orçamentos - Papel para PDF
 ----------------------------
 Aplicação Streamlit que permite tirar uma foto a um orçamento escrito à mão
 e transformá-la automaticamente num PDF profissional, pronto a enviar ao
@@ -63,9 +63,7 @@ COLUNAS_TABELA = ["Designação", "Unidade", "Quantidade", "Preço Unitário (�
 NOME_MODELO_IA = "gemini-3.5-flash-lite"
 
 
-# =========================================================================
 # ESTILO
-# =========================================================================
 
 def aplicar_estilo():
     """Aplica o CSS que dá à app um aspeto profissional e adaptado a ecrãs
@@ -76,7 +74,6 @@ def aplicar_estilo():
         <style>
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
-        header {visibility: hidden;}
 
         .stApp {
             max-width: 640px;
@@ -228,10 +225,7 @@ def indicador_passos(passo_atual):
     partes.append("</div>")
     st.markdown("".join(partes), unsafe_allow_html=True)
 
-
-# =========================================================================
 # FUNÇÕES DE APOIO (dados e formatação)
-# =========================================================================
 
 def parse_numero(valor, default=0.0):
     """Converte um valor (número, texto com vírgula ou ponto, ou vazio)
@@ -262,6 +256,7 @@ def dados_vazios():
     """Estrutura de dados em branco, usada quando a pessoa prefere
     preencher tudo manualmente em vez de tirar uma foto."""
     return {
+        "Titulo": "",
         "NomeCliente": "",
         "MoradaCliente": "",
         "Pagamento": "",
@@ -298,6 +293,7 @@ def normalizar_dados(dados):
         ]
 
     return {
+        "Titulo": str(dados.get("Titulo") or "Orçamento Geral").strip(),
         "NomeCliente": str(dados.get("NomeCliente") or "").strip(),
         "MoradaCliente": str(dados.get("MoradaCliente") or "").strip(),
         "Pagamento": str(dados.get("Pagamento") or "").strip(),
@@ -318,9 +314,7 @@ def preparar_imagem_para_ia(imagem):
     return imagem
 
 
-# =========================================================================
 # INTELIGÊNCIA ARTIFICIAL
-# =========================================================================
 
 def obter_cliente_ia():
     """Cria (uma única vez por sessão) o cliente do Gemini."""
@@ -345,6 +339,7 @@ def extrair_dados_da_imagem(imagem):
     Devolve APENAS um objeto JSON válido, sem texto adicional, sem
     comentários e sem marcações ```json, com esta estrutura exata:
     {
+      "Titulo": "Um resumo de 3 a 5 palavras do orçamento (ex: 'Orçamento Pintura Exterior')",
       "NomeCliente": "nome do cliente ou string vazia",
       "MoradaCliente": "morada do cliente ou string vazia",
       "Pagamento": "condições de pagamento ou string vazia",
@@ -622,6 +617,9 @@ def passo_2_confirmar():
     st.markdown("## Passo 2 - Confirme os Dados")
     dados = st.session_state.dados_extraidos
 
+    st.markdown("#### Resumo")
+    titulo_orcamento = st.text_input("Título / Assunto do Orçamento", value=dados.get("Titulo", ""))
+
     st.markdown("#### Os seus dados")
     nome_empresa = st.text_input("Nome da Empresa / Pessoa", value=dados.get("NomeEmpresa", ""))
     contato = st.text_input("Contato", value=dados.get("Contato", ""))
@@ -682,6 +680,24 @@ def passo_2_confirmar():
                     pdf_path, data_doc = gerar_documento(
                         nome_cliente, morada_cliente, tabela_editada, pagamento, nome_empresa, contato, email
                     )
+
+                    try:
+                        supabase.table("orcamentos").insert({
+                            "user_id": st.session_state.user_id,
+                            "titulo": titulo_orcamento,
+                            "cliente": nome_cliente,
+                            "total": float(total),
+                            "conteudo": {
+                                "Titulo": titulo_orcamento,
+                                "NomeCliente": nome_cliente,
+                                "MoradaCliente": morada_cliente,
+                                "Pagamento": pagamento,
+                                "Itens": tabela_editada.to_dict(orient="records")
+                            }
+                        }).execute()
+                    except Exception as e:
+                        print(f"Erro ao guardar na BD: {e}")
+
                     st.session_state.pdf_path = pdf_path
                     st.session_state.data_doc = data_doc
                     st.session_state.nome_cliente_final = nome_cliente
@@ -727,12 +743,51 @@ def reiniciar_sessao():
     st.session_state.passo = 1
 
 
+def mostrar_historico_lateral():
+    """Mostra a lista de orçamentos guardados numa barra lateral (Sidebar)"""
+    with st.sidebar:
+        st.markdown("## Os Meus Orçamentos")
+        
+        try:
+            # Ir buscar os orçamentos do utilizador ordenados do mais recente para o mais antigo
+            resposta = supabase.table("orcamentos").select("*").eq("user_id", st.session_state.user_id).order("data_criacao", desc=True).execute()
+            orcamentos = resposta.data
+            
+            if not orcamentos:
+                st.info("Ainda não tem orçamentos guardados.")
+            else:
+                for orc in orcamentos:
+                    # Formatar a data (ex: 2026-08-07T12:00:00 -> 07/08/2026)
+                    data_str = orc['data_criacao'].split('T')[0]
+                    ano, mes, dia = data_str.split('-')
+                    
+                    titulo = orc.get('titulo', 'Orçamento')
+                    cliente = orc.get('cliente', 'Sem nome')
+                    total = orc.get('total', 0)
+                    
+                    # Design Minimalista, Profissional e Compacto
+                    st.markdown(f"""
+                    <div style="padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #e0e0e0; line-height: 1.4;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-weight: 600; font-size: 0.95rem; color: #222; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;" title="{titulo}">{titulo}</span>
+                            <span style="font-weight: 600; font-size: 0.95rem; color: #1B4965;">{total:.2f} €</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px;">
+                            <span style="font-size: 0.85rem; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;" title="{cliente}">{cliente}</span>
+                            <span style="font-size: 0.8rem; color: #999;">{dia}/{mes}/{ano}</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+        except Exception as e:
+            st.error("Não foi possível carregar o histórico.")
+
 # =========================================================================
 # ARRANQUE DA APLICAÇÃO
 # =========================================================================
 
 def main():
-    st.set_page_config(page_title="Orçamentos", page_icon="🧾", layout="centered")
+    st.set_page_config(page_title="Orçamentos", page_icon="🧾", layout="centered", initial_sidebar_state="collapsed")
     aplicar_estilo()
 
     if "autenticado" not in st.session_state:
@@ -742,6 +797,8 @@ def main():
         st.markdown("<h1>Orçamentos</h1>", unsafe_allow_html=True)
         ecra_login()
         return
+
+    mostrar_historico_lateral()
 
     if "passo" not in st.session_state:
         st.session_state.passo = 1
