@@ -15,18 +15,16 @@ pessoas com pouca experiência em aplicações digitais:
 import json
 import os
 import re
-import subprocess
 import tempfile
 from copy import deepcopy
 from datetime import datetime
 
 import pandas as pd
 import streamlit as st
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from dotenv import load_dotenv
 from google import genai
 from PIL import Image
+from xhtml2pdf import pisa
 
 load_dotenv()
 
@@ -44,7 +42,6 @@ try:
 except Exception:
     PASSWORD_SISTEMA = os.getenv("APP_PASSWORD")
 
-TEMPLATE_PATH = "template.docx"
 
 COLUNAS_TABELA = ["Designação", "Unidade", "Quantidade", "Preço Unitário (€)"]
 
@@ -373,27 +370,6 @@ def extrair_dados_da_imagem(imagem):
     return normalizar_dados(dados)
 
 
-# =========================================================================
-# GERAÇÃO DO DOCUMENTO (Word → PDF)
-# =========================================================================
-
-def substituir_na_paragrafo(paragrafo, mapa_substituicoes):
-    """Substitui as etiquetas {{...}} no texto de um parágrafo, preservando
-    a formatação (negrito, tamanho, tipo de letra) do texto original."""
-    texto_completo = paragrafo.text
-    if not any(chave in texto_completo for chave in mapa_substituicoes):
-        return
-    for chave, valor in mapa_substituicoes.items():
-        texto_completo = texto_completo.replace(chave, valor)
-
-    if paragrafo.runs:
-        paragrafo.runs[0].text = texto_completo
-        for run in paragrafo.runs[1:]:
-            run.text = ""
-    else:
-        paragrafo.text = texto_completo
-
-
 def obter_pasta_trabalho():
     """Cada sessão (cada pessoa a usar a app) tem a sua própria pasta
     temporária, para que dois orçamentos gerados ao mesmo tempo por
@@ -404,87 +380,138 @@ def obter_pasta_trabalho():
 
 
 def gerar_documento(nome_cliente, morada_cliente, dataframe_tabela, pagamento, nome_empresa, contato, email):
-    """Recebe os dados confirmados, preenche o Word e converte para PDF
-    usando o LibreOffice."""
     pasta_trabalho = obter_pasta_trabalho()
-
-    doc = Document(TEMPLATE_PATH)
     data_hoje = datetime.today().strftime("%d/%m/%Y")
-
-    substituicoes = {
-        "{{NOME_CLIENTE}}": nome_cliente,
-        "{{MORADA}}": morada_cliente,
-        "{{PAGAMENTO}}": pagamento,
-        "{{DATA}}": data_hoje,
-        "{{NOME_EMPRESA}}": nome_empresa,
-        "{{CONTATO}}": contato,
-        "{{EMAIL}}": email,
-    }
-    for paragrafo in doc.paragraphs:
-        substituir_na_paragrafo(paragrafo, substituicoes)
-
-    tabela_word = doc.tables[0]
-    total_orcamento = 0.0
-
-    # Guardar as estruturas XML dos dois moldes (linha de item e linha de total)
-    molde_item = deepcopy(tabela_word.rows[2]._tr)
-    molde_total = deepcopy(tabela_word.rows[3]._tr)
-
-    # Limpar a tabela original, ficando só com o cabeçalho
-    tabela_word._tbl.remove(tabela_word.rows[3]._tr)
-    tabela_word._tbl.remove(tabela_word.rows[2]._tr)
-    tabela_word._tbl.remove(tabela_word.rows[1]._tr)
-
-    numero_item = 0
-    for _, linha in dataframe_tabela.iterrows():
-        designacao = str(linha.get("Designação") or "").strip()
-        if not designacao:
-            continue  # ignora linhas em branco deixadas na tabela
-
-        numero_item += 1
-        nova_linha_tr = deepcopy(molde_item)
-        tabela_word._tbl.append(nova_linha_tr)
-        celulas = tabela_word.rows[-1].cells
-        for celula in celulas:
-            celula.text = ""
-
-        quantidade = parse_numero(linha.get("Quantidade", 0), default=0.0)
-        preco_unitario = parse_numero(linha.get("Preço Unitário (€)", 0), default=0.0)
-        preco_total_linha = quantidade * preco_unitario
-        total_orcamento += preco_total_linha
-
-        celulas[0].text = str(numero_item)
-        celulas[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        celulas[1].text = designacao
-        celulas[2].text = str(linha.get("Unidade") or "Vg.")
-        celulas[2].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        celulas[3].text = formatar_numero(quantidade)
-        celulas[3].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        celulas[4].text = formatar_numero(preco_unitario)
-        celulas[4].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        celulas[5].text = formatar_numero(preco_total_linha)
-        celulas[5].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-    # Linha final de total
-    nova_linha_total_tr = deepcopy(molde_total)
-    tabela_word._tbl.append(nova_linha_total_tr)
-    linha_total = tabela_word.rows[-1].cells
-    linha_total[4].text = "TOTAL:"
-    linha_total[5].text = f"{total_orcamento:.2f} €"
-    if linha_total[4].paragraphs[0].runs:
-        linha_total[4].paragraphs[0].runs[0].bold = True
-    if linha_total[5].paragraphs[0].runs:
-        linha_total[5].paragraphs[0].runs[0].bold = True
-
-    docx_path = os.path.join(pasta_trabalho, "orcamento.docx")
-    doc.save(docx_path)
-
-    subprocess.run(
-        ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", pasta_trabalho, docx_path],
-        check=True,
-        timeout=90,
-    )
     pdf_path = os.path.join(pasta_trabalho, "orcamento.pdf")
+
+    linhas_html = ""
+    total_orcamento = 0.0
+    
+    for idx, row in dataframe_tabela.iterrows():
+        designacao = str(row.get("Designação", "")).strip()
+        if not designacao:
+            continue
+            
+        qtd = parse_numero(row.get("Quantidade", 0))
+        preco = parse_numero(row.get("Preço Unitário (€)", 0))
+        total_linha = qtd * preco
+        total_orcamento += total_linha
+        unidade = str(row.get("Unidade", "Vg."))
+        
+        linhas_html += f"""
+        <tr>
+            <td width="8%" style="border: 1px solid black; text-align: center; padding: 6px;">{idx + 1}</td>
+            <td width="50%" style="border: 1px solid black; padding: 6px;">{designacao}</td>
+            <td width="8%" style="border: 1px solid black; text-align: center; padding: 6px;">{unidade}</td>
+            <td width="8%" style="border: 1px solid black; text-align: center; padding: 6px;">{formatar_numero(qtd)}</td>
+            <td width="13%" style="border: 1px solid black; text-align: right; padding: 6px;">{formatar_numero(preco)}</td>
+            <td width="13%" style="border: 1px solid black; text-align: right; padding: 6px;">{formatar_numero(total_linha)}</td>
+        </tr>
+        """
+
+    assinatura = nome_empresa if nome_empresa else "Alfredo Cunha"
+
+    html_content = f"""
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            @page {{
+                size: A4;
+                margin: 1.5cm; /* Margem reduzida para aproveitar melhor a folha */
+            }}
+            body {{
+                font-family: Helvetica, Arial, sans-serif;
+                font-size: 11pt;
+                color: #000000;
+                line-height: 1.3;
+            }}
+            
+            .header-cell {{
+                border: 1px solid black;
+                background-color: #A9D18E; 
+                text-align: center;
+                font-weight: bold;
+                padding: 8px;
+            }}
+            
+            .total-cell {{
+                border: 1px solid black;
+                background-color: #A9D18E; 
+                font-weight: bold;
+                padding: 8px;
+            }}
+        </style>
+    </head>
+    <body>
+        
+        <!-- CABEÇALHO COMPACTO: 2 Colunas lado a lado -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="font-family: Helvetica, sans-serif; font-size: 11pt; margin-bottom: 20px;">
+            <tr>
+                <td width="50%" style="vertical-align: top;">
+                    <strong>{nome_empresa if nome_empresa else " "}</strong><br><br>
+                    Telemóvel: {contato if contato else " "}<br>
+                    Email: {email if email else " "}
+                </td>
+                <td width="50%" style="text-align: right; vertical-align: top;">
+                    {data_hoje}<br><br>
+                    Cliente: {nome_cliente if nome_cliente else " "}<br>
+                    Local: {morada_cliente.replace(chr(10), ', ') if morada_cliente else " "}
+                </td>
+            </tr>
+        </table>
+
+        <!-- TABELA PRINCIPAL -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th width="8%" class="header-cell">Art.</th>
+                    <th width="50%" class="header-cell">Designação</th>
+                    <th width="8%" class="header-cell">Unid.</th>
+                    <th width="8%" class="header-cell">Qt.</th>
+                    <th width="13%" class="header-cell">Preço Un.</th>
+                    <th width="13%" class="header-cell">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {linhas_html}
+                <tr>
+                    <td width="8%" class="total-cell"></td>
+                    <td width="50%" class="total-cell"></td>
+                    <td width="8%" class="total-cell"></td>
+                    <td width="8%" class="total-cell"></td>
+                    <td width="13%" class="total-cell" style="text-align: center;">TOTAL</td>
+                    <td width="13%" class="total-cell" style="text-align: right;">{formatar_numero(total_orcamento)}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <br>
+
+        <div style="font-family: Helvetica, sans-serif; font-size: 10pt;">
+            <p><strong>Materiais e mão de obra incluída, assim como todas as ferramentas necessárias para a boa execução dos trabalhos.</strong></p>
+            
+            <p style="margin-top: 10px;"><strong>Condições gerais:</strong></p>
+            <div style="margin-left: 20px; line-height: 1.4;">
+                Aos preços apresentados acresce o IVA à taxa legal em vigor, caso seja necessária a emissão de fatura com número de contribuinte;<br>
+                Garantias: Estão salvaguardadas todas as garantias ao abrigo das leis vigentes;<br>
+                Condições de pagamento: {pagamento if pagamento else "A combinar"};<br>
+                Este orçamento tem a validade de 30 dias.
+            </div>
+            
+            <p style="margin-top: 30px;">
+                <strong>Com os melhores cumprimentos,</strong><br><br>
+                <strong><u>{assinatura}</u></strong>
+            </p>
+        </div>
+        
+    </body>
+    </html>
+    """
+
+    with open(pdf_path, "w+b") as result_file:
+        pisa.CreatePDF(html_content, dest=result_file)
+
     return pdf_path, data_hoje
 
 
@@ -620,7 +647,7 @@ def passo_2_confirmar():
         elif tabela_editada["Designação"].apply(lambda x: str(x or "").strip()).eq("").all():
             st.warning("Adicione pelo menos um trabalho ou material ao orçamento.")
         else:
-            with st.spinner("A gerar o documento Word e PDF..."):
+            with st.spinner("A gerar o PDF..."):
                 try:
                     pdf_path, data_doc = gerar_documento(
                         nome_cliente, morada_cliente, tabela_editada, pagamento, nome_empresa, contato, email
@@ -630,10 +657,8 @@ def passo_2_confirmar():
                     st.session_state.nome_cliente_final = nome_cliente
                     st.session_state.passo = 3
                     st.rerun()
-                except subprocess.CalledProcessError:
-                    st.error("Não foi possível converter o documento para PDF. Tente novamente.")
                 except Exception as e:
-                    st.error("Ocorreu um erro ao gerar o documento.")
+                    st.error("Ocorreu um erro ao gerar o documento PDF.")
                     with st.expander("Detalhes técnicos"):
                         st.code(str(e))
 
