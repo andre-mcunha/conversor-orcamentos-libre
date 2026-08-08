@@ -194,6 +194,32 @@ def aplicar_estilo():
             font-size: 0.95rem;
             margin-bottom: 1rem;
         }
+
+        /* Lista de orçamentos na barra lateral (itens clicáveis) */
+        [data-testid="stSidebar"] .stButton > button {
+            background: #FFFFFF;
+            border: 1px solid #E3E8EC;
+            color: #24313D;
+            text-align: left;
+            font-weight: 400;
+            font-size: 0.88rem;
+            line-height: 1.4;
+            padding: 0.55rem 0.75rem;
+            border-radius: 10px;
+            min-height: auto;
+            white-space: normal;
+            margin-bottom: 0.4rem;
+            box-shadow: none;
+        }
+        [data-testid="stSidebar"] .stButton > button p {
+            text-align: left;
+            margin: 0;
+        }
+        [data-testid="stSidebar"] .stButton > button:hover {
+            border-color: #1B4965;
+            background: #EEF2F5;
+            color: #1B4965;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -743,11 +769,61 @@ def reiniciar_sessao():
     st.session_state.passo = 1
 
 
+def extrair_resumo_orcamento(orc):
+    """Deriva o título, o cliente e o total a mostrar/reutilizar sempre a
+    partir da MESMA fonte: o campo 'conteudo' (o JSON completo). As colunas
+    'titulo', 'cliente' e 'total' da tabela existem só para permitir
+    pesquisar/ordenar na base de dados - nunca são a fonte de verdade para
+    o que aparece no ecrã, para evitar que a sidebar e o Passo 2 mostrem
+    dados diferentes para o mesmo orçamento caso as colunas e o JSON alguma
+    vez fiquem dessincronizados (ex.: uma futura função de editar/renomear
+    que só atualize um dos dois locais).
+
+    As colunas da tabela só são usadas como reserva, para registos antigos
+    ou incompletos em que o 'conteudo' não tenha o campo."""
+    conteudo = orc.get("conteudo") or {}
+
+    titulo = str(conteudo.get("Titulo") or orc.get("titulo") or "Orçamento").strip()
+    cliente = str(conteudo.get("NomeCliente") or orc.get("cliente") or "Sem nome").strip()
+
+    total = orc.get("total")
+    if total is None:
+        # Reserva: recalcula a partir dos itens se a coluna 'total' faltar
+        total = sum(
+            parse_numero(item.get("Quantidade", 0)) * parse_numero(item.get("Preço Unitário (€)", 0))
+            for item in (conteudo.get("Itens", []) or [])
+        )
+
+    return titulo, cliente, float(total or 0), conteudo
+
+
+def carregar_orcamento_selecionado(orc):
+    """Coloca os dados de um orçamento já guardado no Passo 2, prontos a
+    rever e editar. Serve para reaproveitar rapidamente trabalhos e
+    materiais idênticos num novo orçamento (ex.: o mesmo tipo de obra
+    para um cliente diferente), sem ter de voltar a fotografar ou a
+    escrever tudo de novo."""
+    _, _, _, conteudo = extrair_resumo_orcamento(orc)
+    st.session_state.dados_extraidos = normalizar_dados(conteudo)
+
+    # Limpar resíduos de um PDF gerado anteriormente nesta sessão, para
+    # não mostrar por engano o ficheiro de um orçamento antigo.
+    for chave in ["pdf_path", "data_doc", "nome_cliente_final"]:
+        st.session_state.pop(chave, None)
+
+    st.session_state.passo = 2
+    st.rerun()
+
+
 def mostrar_historico_lateral():
-    """Mostra a lista de orçamentos guardados numa barra lateral (Sidebar)"""
+    """Mostra a lista de orçamentos guardados numa barra lateral (Sidebar).
+    Cada orçamento é clicável: ao tocar, os seus dados são carregados no
+    Passo 2, para facilitar a criação de um novo orçamento com trabalhos
+    idênticos aos desse orçamento."""
     with st.sidebar:
         st.markdown("## Os Meus Orçamentos")
-        
+        st.caption("Toque num orçamento para reutilizar os seus dados.")
+
         try:
             # Ir buscar os orçamentos do utilizador ordenados do mais recente para o mais antigo
             resposta = supabase.table("orcamentos").select("*").eq("user_id", st.session_state.user_id).order("data_criacao", desc=True).execute()
@@ -756,35 +832,26 @@ def mostrar_historico_lateral():
             if not orcamentos:
                 st.info("Ainda não tem orçamentos guardados.")
             else:
-                for orc in orcamentos:
+                for indice, orc in enumerate(orcamentos):
                     # Formatar a data (ex: 2026-08-07T12:00:00 -> 07/08/2026)
                     data_str = orc['data_criacao'].split('T')[0]
                     ano, mes, dia = data_str.split('-')
-                    
-                    titulo = orc.get('titulo', 'Orçamento')
-                    cliente = orc.get('cliente', 'Sem nome')
-                    total = orc.get('total', 0)
-                    
-                    # Design Minimalista, Profissional e Compacto
-                    st.markdown(f"""
-                    <div style="padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #e0e0e0; line-height: 1.4;">
-                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                            <span style="font-weight: 600; font-size: 0.95rem; color: #222; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;" title="{titulo}">{titulo}</span>
-                            <span style="font-weight: 600; font-size: 0.95rem; color: #1B4965;">{total:.2f} €</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px;">
-                            <span style="font-size: 0.85rem; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;" title="{cliente}">{cliente}</span>
-                            <span style="font-size: 0.8rem; color: #999;">{dia}/{mes}/{ano}</span>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+
+                    titulo, cliente, total, _ = extrair_resumo_orcamento(orc)
+
+                    # Item clicável (aspeto de cartão minimalista, igual ao anterior)
+                    rotulo = f"**{titulo}** · {total:.2f} €\n\n{cliente} · {dia}/{mes}/{ano}"
+                    if st.button(
+                        rotulo,
+                        key=f"orc_item_{orc.get('id', indice)}",
+                        use_container_width=True,
+                    ):
+                        carregar_orcamento_selecionado(orc)
                     
         except Exception as e:
             st.error("Não foi possível carregar o histórico.")
 
-# =========================================================================
 # ARRANQUE DA APLICAÇÃO
-# =========================================================================
 
 def main():
     st.set_page_config(page_title="Orçamentos", page_icon="🧾", layout="centered", initial_sidebar_state="collapsed")
