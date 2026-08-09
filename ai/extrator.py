@@ -69,9 +69,9 @@ def obter_cliente_ia() -> genai.Client:
     """Cria um cliente novo do Gemini. Lança RuntimeError se a chave da
     API não estiver configurada, para dar um erro claro em vez de uma
     exceção genérica mais tarde."""
-    if not config.API_KEY:
+    if not config.GOOGLE_API_KEY:
         raise RuntimeError("A chave da API de IA não está configurada.")
-    return genai.Client(api_key=config.API_KEY)
+    return genai.Client(api_key=config.GOOGLE_API_KEY)
 
 
 def extrair_dados_da_imagem(imagem: Image.Image, cliente_ia: genai.Client) -> dict:
