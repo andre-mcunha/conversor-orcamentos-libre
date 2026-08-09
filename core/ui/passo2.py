@@ -7,10 +7,10 @@ import logging
 import pandas as pd
 import streamlit as st
 
-from config import COLUNAS_TABELA
-from data.orcamentos_repo import OrcamentosRepo
-from pdf.gerador import gerar_documento, nova_pasta_trabalho
-from utils import formatar_euro, parse_numero
+from core.config import COLUNAS_TABELA
+from core.data.orcamentos_repo import OrcamentosRepo
+from core.pdf.gerador import gerar_documento, nova_pasta_trabalho
+from core.utils import formatar_euro, parse_numero
 
 logger = logging.getLogger(__name__)
 

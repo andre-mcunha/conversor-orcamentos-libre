@@ -19,15 +19,15 @@ import logging
 
 import streamlit as st
 
-from config import configurar_logging
-from data.orcamentos_repo import OrcamentosRepo
-from data.supabase_client import obter_supabase
-from styles import aplicar_estilo, indicador_passos
-from ui.login import ecra_login
-from ui.passo1 import passo_1_foto
-from ui.passo2 import passo_2_confirmar
-from ui.passo3 import passo_3_download
-from ui.sidebar_hist import mostrar_historico_lateral
+from core.config import configurar_logging
+from core.data.orcamentos_repo import OrcamentosRepo
+from core.data.supabase_client import obter_supabase
+from core.styles import aplicar_estilo, indicador_passos
+from core.ui.login import ecra_login
+from core.ui.passo1 import passo_1_foto
+from core.ui.passo2 import passo_2_confirmar
+from core.ui.passo3 import passo_3_download
+from core.ui.sidebar_hist import mostrar_historico_lateral
 
 configurar_logging()
 logger = logging.getLogger(__name__)

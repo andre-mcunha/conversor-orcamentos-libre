@@ -16,7 +16,7 @@ from datetime import datetime
 import pandas as pd
 from xhtml2pdf import pisa
 
-from utils import formatar_numero, parse_numero
+from core.utils import formatar_numero, parse_numero
 
 logger = logging.getLogger(__name__)
 

@@ -8,8 +8,8 @@ import logging
 import streamlit as st
 from PIL import Image
 
-from ai import extrator
-from utils import dados_vazios
+from core.ai import extrator
+from core.utils import dados_vazios
 
 logger = logging.getLogger(__name__)
 

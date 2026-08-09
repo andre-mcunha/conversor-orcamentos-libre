@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from data.orcamentos_repo import OrcamentosRepo, extrair_resumo_orcamento
+from core.data.orcamentos_repo import OrcamentosRepo, extrair_resumo_orcamento
 
 
 class TestExtrairResumoOrcamento:

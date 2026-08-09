@@ -7,7 +7,7 @@ import logging
 import streamlit as st
 from supabase import Client, create_client
 
-import config
+from core import config
 
 logger = logging.getLogger(__name__)
 

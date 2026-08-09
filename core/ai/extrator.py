@@ -12,8 +12,8 @@ import logging
 
 from google import genai
 from PIL import Image
-import config
-from utils import normalizar_dados
+from core import config
+from core.utils import normalizar_dados
 
 logger = logging.getLogger(__name__)
 

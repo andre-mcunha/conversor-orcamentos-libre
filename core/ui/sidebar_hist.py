@@ -10,8 +10,8 @@ import logging
 
 import streamlit as st
 
-from data.orcamentos_repo import OrcamentosRepo, extrair_resumo_orcamento
-from utils import normalizar_dados
+from core.data.orcamentos_repo import OrcamentosRepo, extrair_resumo_orcamento
+from core.utils import normalizar_dados
 
 logger = logging.getLogger(__name__)
 
