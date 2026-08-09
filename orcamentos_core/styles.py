@@ -14,14 +14,14 @@ import streamlit as st
 # Tokens de cor - usados também fora do CSS (ex.: nomes por extenso nos
 # comentários), para que uma mudança de paleta só precise de acontecer aqui.
 CORES = {
-    "papel": "#F7F3EA",
+    "papel": "#FAFAF9",
     "papel_card": "#FFFFFF",
-    "tinta": "#211D18",
-    "tinta_suave": "#6B655A",
-    "risco": "#2C4A63",
-    "risco_escuro": "#1F3548",
-    "selo": "#9C4A2C",
-    "linha": "#DDD5C4",
+    "tinta": "#24262B",
+    "tinta_suave": "#6B6D72",
+    "risco": "#3D5A73",
+    "risco_escuro": "#2C4356",
+    "selo": "#2C4356",
+    "linha": "#E3E3DF",
     "sucesso": "#3F6B4A",
 }
 
@@ -37,14 +37,14 @@ def aplicar_estilo() -> None:
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
 
         :root {
-            --papel: #FAFAFA;
+            --papel: #FAFAF9;
             --papel-card: #FFFFFF;
-            --tinta: #211D18;
-            --tinta-suave: #6B655A;
-            --risco: #2C4A63;
-            --risco-escuro: #1F3548;
-            --selo: #9C4A2C;
-            --linha: #DDD5C4;
+            --tinta: #24262B;
+            --tinta-suave: #6B6D72;
+            --risco: #3D5A73;
+            --risco-escuro: #2C4356;
+            --selo: #2C4356;
+            --linha: #E3E3DF;
             --sucesso: #3F6B4A;
             --raio: 4px;
         }
