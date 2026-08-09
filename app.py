@@ -12,22 +12,22 @@ pessoas com pouca experiência em aplicações digitais:
     3. Descarregar o PDF final
 
 Este ficheiro é só o ponto de entrada: orquestra o fluxo entre passos.
-A lógica de cada parte vive nos módulos dentro de .
+A lógica de cada parte vive nos módulos dentro de orcamentos_core/.
 """
 
 import logging
 
 import streamlit as st
 
-from core.config import configurar_logging
-from core.data.orcamentos_repo import OrcamentosRepo
-from core.data.supabase_client import obter_supabase
-from core.styles import aplicar_estilo, indicador_passos
-from core.ui.login import ecra_login
-from core.ui.passo1 import passo_1_foto
-from core.ui.passo2 import passo_2_confirmar
-from core.ui.passo3 import passo_3_download
-from core.ui.sidebar_hist import mostrar_historico_lateral
+from orcamentos_core.config import configurar_logging
+from orcamentos_core.data.orcamentos_repo import OrcamentosRepo
+from orcamentos_core.data.supabase_client import obter_supabase
+from orcamentos_core.styles import aplicar_estilo, indicador_passos, mostrar_cabecalho
+from orcamentos_core.ui.login import ecra_login
+from orcamentos_core.ui.passo1_foto import passo_1_foto
+from orcamentos_core.ui.passo2_confirmar import passo_2_confirmar
+from orcamentos_core.ui.passo3_download import passo_3_download
+from orcamentos_core.ui.sidebar_historico import mostrar_historico_lateral
 
 configurar_logging()
 logger = logging.getLogger(__name__)
@@ -35,8 +35,8 @@ logger = logging.getLogger(__name__)
 
 def main() -> None:
     st.set_page_config(
-        page_title="Orçamentos",
-        page_icon="🧾",
+        page_title="Meu Orçamento",
+        page_icon=None,
         layout="centered",
         initial_sidebar_state="collapsed",
     )
@@ -49,7 +49,7 @@ def main() -> None:
         st.session_state.autenticado = False
 
     if not st.session_state.autenticado:
-        st.markdown("<h1>Orçamentos</h1>", unsafe_allow_html=True)
+        mostrar_cabecalho()
         ecra_login(supabase)
         return
 
@@ -58,7 +58,7 @@ def main() -> None:
     if "passo" not in st.session_state:
         st.session_state.passo = 1
 
-    st.markdown("<h1>Orçamentos</h1>", unsafe_allow_html=True)
+    mostrar_cabecalho()
     indicador_passos(st.session_state.passo)
 
     if st.session_state.passo == 1:

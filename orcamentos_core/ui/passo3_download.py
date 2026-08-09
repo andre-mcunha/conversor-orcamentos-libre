@@ -7,6 +7,8 @@ import re
 
 import streamlit as st
 
+from orcamentos_core.styles import mostrar_carimbo_conclusao
+
 logger = logging.getLogger(__name__)
 
 
@@ -15,8 +17,7 @@ def passo_3_download() -> None:
         st.session_state.passo = 1
         st.rerun()
 
-    st.markdown("## Orçamento Pronto")
-    st.success("O PDF foi gerado com sucesso.")
+    mostrar_carimbo_conclusao()
 
     nome_base = (st.session_state.get("nome_cliente_final") or "cliente").strip()
     nome_base = re.sub(r"\s+", "_", nome_base) or "cliente"
@@ -28,12 +29,12 @@ def passo_3_download() -> None:
             data=ficheiro_pdf,
             file_name=nome_ficheiro,
             mime="application/pdf",
-            width='stretch',
+            use_container_width=True,
             type="primary",
         )
 
     st.markdown("---")
-    if st.button("Criar Novo Orçamento", width='stretch'):
+    if st.button("Criar Novo Orçamento", use_container_width=True):
         reiniciar_sessao()
         st.rerun()
 

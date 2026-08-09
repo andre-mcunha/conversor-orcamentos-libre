@@ -4,7 +4,7 @@ Extração de dados a partir da foto do orçamento manuscrito.
 Este módulo não depende de `st.session_state`: recebe o cliente de IA já
 criado como argumento em vez de o gerir sozinho. Isso mantém a lógica de
 extração testável com um cliente falso (ver tests/test_extrator.py); a
-decisão de cache-por-sessão fica na camada de UI (ui/passo1_foto.py).
+decisão de cache-por-sessão fica na camada de UI (orcamentos_core/ui/passo1_foto.py).
 """
 
 import json
@@ -12,8 +12,9 @@ import logging
 
 from google import genai
 from PIL import Image
-from core import config
-from core.utils import normalizar_dados
+
+from orcamentos_core import config
+from orcamentos_core.utils import normalizar_dados
 
 logger = logging.getLogger(__name__)
 

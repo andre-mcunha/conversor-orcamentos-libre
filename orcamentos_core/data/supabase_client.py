@@ -7,7 +7,7 @@ import logging
 import streamlit as st
 from supabase import Client, create_client
 
-from core import config
+from orcamentos_core import config
 
 logger = logging.getLogger(__name__)
 

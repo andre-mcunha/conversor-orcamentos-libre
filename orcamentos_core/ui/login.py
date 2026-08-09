@@ -10,13 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 def ecra_login(supabase) -> None:
-    st.markdown("### Bem-vindo(a) ao Orçamentos")
-    st.markdown("Introduza os seus dados para entrar.")
 
     email = st.text_input("Email", placeholder="O seu email", key="login_email")
     senha = st.text_input("Password", type="password", placeholder="A sua password", key="login_senha")
 
-    entrar = st.button("Entrar", width='stretch', type="primary")
+    entrar = st.button("Entrar", use_container_width=True, type="primary")
 
     if entrar:
         if not supabase:
@@ -40,5 +38,3 @@ def ecra_login(supabase) -> None:
                 st.error("Email ou password incorretos.")
                 with st.expander("Detalhes"):
                     st.code(str(e))
-
-    st.markdown("</div>", unsafe_allow_html=True)

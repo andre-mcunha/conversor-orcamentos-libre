@@ -8,8 +8,8 @@ import logging
 import streamlit as st
 from PIL import Image
 
-from core.ai import extrator
-from core.utils import dados_vazios
+from orcamentos_core.ai import extrator
+from orcamentos_core.utils import dados_vazios
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +25,9 @@ def _obter_cliente_ia_sessao():
 def passo_1_foto() -> None:
     st.markdown("## Passo 1 - Foto do Orçamento")
     st.markdown(
-        '<div class="dica-caixa">Tire a foto num local bem iluminado, '
-        "com o papel esticado e sem sombras por cima do texto.</div>",
+        '<div class="anotacao"><span class="anotacao-marca">Nota</span>'
+        '<span class="anotacao-texto">Tire a foto num local bem iluminado, '
+        "com o papel esticado e sem sombras por cima do texto.</span></div>",
         unsafe_allow_html=True,
     )
 
@@ -44,9 +45,9 @@ def passo_1_foto() -> None:
 
     if arquivo_imagem is not None:
         imagem = Image.open(arquivo_imagem)
-        st.image(imagem, caption="Pré-visualização", width='stretch')
+        st.image(imagem, caption="Pré-visualização", use_container_width=True)
 
-        if st.button("Confirmar e Analisar", width='stretch', type="primary"):
+        if st.button("Confirmar e Analisar", use_container_width=True, type="primary"):
             with st.spinner("A analisar o orçamento... alguns segundos."):
                 try:
                     cliente_ia = _obter_cliente_ia_sessao()

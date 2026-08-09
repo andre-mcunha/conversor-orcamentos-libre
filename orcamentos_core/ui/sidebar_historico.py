@@ -10,8 +10,8 @@ import logging
 
 import streamlit as st
 
-from core.data.orcamentos_repo import OrcamentosRepo, extrair_resumo_orcamento
-from core.utils import normalizar_dados
+from orcamentos_core.data.orcamentos_repo import OrcamentosRepo, extrair_resumo_orcamento
+from orcamentos_core.utils import normalizar_dados
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ def mostrar_historico_lateral(repo: OrcamentosRepo) -> None:
                     if st.button(
                         rotulo,
                         key=f"orc_item_{orc.get('id', indice)}",
-                        width='stretch',
+                        use_container_width=True,
                     ):
                         _carregar_orcamento_selecionado(orc)
 

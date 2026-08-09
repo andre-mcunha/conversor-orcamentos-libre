@@ -10,7 +10,7 @@ base de dados real (ver tests/test_orcamentos_repo.py).
 
 import logging
 
-from core.utils import parse_numero
+from orcamentos_core.utils import parse_numero
 
 logger = logging.getLogger(__name__)
 

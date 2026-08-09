@@ -24,7 +24,7 @@ def _obter_segredo(chave_secrets: str, chave_env: str):
         return os.getenv(chave_env)
 
 
-GOOGLE_API_KEY = _obter_segredo("GOOGLE_API_KEY", "GOOGLE_API_KEY")
+GOOGLE_API_KEY = _obter_segredo("GOOGLE_API_KEY", "API_KEY")
 SUPABASE_URL = _obter_segredo("SUPABASE_URL", "SUPABASE_URL")
 SUPABASE_KEY = _obter_segredo("SUPABASE_KEY", "SUPABASE_KEY")
 

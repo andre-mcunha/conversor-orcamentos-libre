@@ -5,7 +5,7 @@ Recebe a pasta de trabalho como argumento em vez de a gerir sozinho via
 `st.session_state`, o que mantém este módulo testável (ver
 tests/test_gerador.py) e independente do Streamlit: pode gerar um PDF
 para dentro de qualquer pasta temporária. A camada de UI é que decide
-reutilizar sempre a mesma pasta por sessão (/ui/passo2_confirmar.py).
+reutilizar sempre a mesma pasta por sessão (orcamentos_core/ui/passo2_confirmar.py).
 """
 
 import logging
@@ -16,7 +16,7 @@ from datetime import datetime
 import pandas as pd
 from xhtml2pdf import pisa
 
-from core.utils import formatar_numero, parse_numero
+from orcamentos_core.utils import formatar_numero, parse_numero
 
 logger = logging.getLogger(__name__)
 

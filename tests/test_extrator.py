@@ -11,8 +11,8 @@ from unittest.mock import MagicMock
 import pytest
 from PIL import Image
 
-from core import config
-from core.ai import extrator
+from orcamentos_core import config
+from orcamentos_core.ai import extrator
 
 
 def _cliente_ia_falso(texto_resposta: str):

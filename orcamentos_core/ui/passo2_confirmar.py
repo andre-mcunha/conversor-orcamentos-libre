@@ -7,10 +7,10 @@ import logging
 import pandas as pd
 import streamlit as st
 
-from core.config import COLUNAS_TABELA
-from core.data.orcamentos_repo import OrcamentosRepo
-from core.pdf.gerador import gerar_documento, nova_pasta_trabalho
-from core.utils import formatar_euro, parse_numero
+from orcamentos_core.config import COLUNAS_TABELA
+from orcamentos_core.data.orcamentos_repo import OrcamentosRepo
+from orcamentos_core.pdf.gerador import gerar_documento, nova_pasta_trabalho
+from orcamentos_core.utils import formatar_euro, parse_numero
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def passo_2_confirmar(repo: OrcamentosRepo) -> None:
     tabela_editada = st.data_editor(
         df,
         num_rows="dynamic",
-        width='stretch',
+        use_container_width=True,
         hide_index=True,
         key="editor_tabela",
         column_config={
@@ -77,11 +77,11 @@ def passo_2_confirmar(repo: OrcamentosRepo) -> None:
 
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Voltar", width='stretch'):
+        if st.button("Voltar", use_container_width=True):
             st.session_state.passo = 1
             st.rerun()
     with col2:
-        gerar = st.button("Gerar PDF", width='stretch', type="primary")
+        gerar = st.button("Gerar PDF", use_container_width=True, type="primary")
 
     if gerar:
         if not morada_cliente.strip():
@@ -121,8 +121,7 @@ def passo_2_confirmar(repo: OrcamentosRepo) -> None:
                         # O PDF já foi gerado com sucesso; só o registo no
                         # histórico é que falhou - avisa sem bloquear o fluxo.
                         st.toast(
-                            "O PDF foi gerado, mas não foi possível guardá-lo no histórico.",
-                            icon="⚠️",
+                            "O PDF foi gerado, mas não foi possível guardá-lo no histórico."
                         )
 
                     st.session_state.pdf_path = pdf_path

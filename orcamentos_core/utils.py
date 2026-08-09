@@ -4,7 +4,7 @@ estrutura de dados de um orçamento.
 
 Este módulo não depende do Streamlit nem de nenhum serviço externo -
 são todas funções puras (a mesma entrada dá sempre a mesma saída), o
-que as torna fáceis de testar.
+que as torna fáceis de testar isoladamente (ver tests/test_utils.py).
 """
 
 import re
