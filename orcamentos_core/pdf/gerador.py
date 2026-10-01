@@ -8,6 +8,7 @@ para dentro de qualquer pasta temporária. A camada de UI é que decide
 reutilizar sempre a mesma pasta por sessão (orcamentos_core/ui/passo2_confirmar.py).
 """
 
+import html
 import logging
 import os
 import tempfile
@@ -45,21 +46,25 @@ def gerar_documento(
     linhas_html = ""
     total_orcamento = 0.0
 
-    for idx, row in dataframe_tabela.iterrows():
+    numero = 0
+    for _, row in dataframe_tabela.iterrows():
         designacao = str(row.get("Designação", "")).strip()
         if not designacao:
             continue
+        numero += 1
 
         qtd = parse_numero(row.get("Quantidade", 0))
         preco = parse_numero(row.get("Preço Unitário (€)", 0))
         total_linha = qtd * preco
         total_orcamento += total_linha
-        unidade = str(row.get("Unidade", "Vg."))
+        unidade = html.escape(str(row.get("Unidade", "Vg.")))
+        # A descrição pode ter várias linhas (caixa de texto do Passo 2).
+        designacao_html = html.escape(designacao).replace("\n", "<br/>")
 
         linhas_html += f"""
         <tr>
-            <td width="8%" style="border: 1px solid black; text-align: center; padding: 6px;">{idx + 1}</td>
-            <td width="50%" style="border: 1px solid black; padding: 6px;">{designacao}</td>
+            <td width="8%" style="border: 1px solid black; text-align: center; padding: 6px;">{numero}</td>
+            <td width="50%" style="border: 1px solid black; padding: 6px;">{designacao_html}</td>
             <td width="8%" style="border: 1px solid black; text-align: center; padding: 6px;">{unidade}</td>
             <td width="8%" style="border: 1px solid black; text-align: center; padding: 6px;">{formatar_numero(qtd)}</td>
             <td width="13%" style="border: 1px solid black; text-align: right; padding: 6px;">{formatar_numero(preco)}</td>

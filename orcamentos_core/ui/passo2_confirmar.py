@@ -4,13 +4,12 @@ Passo 2 - Confirmação/edição dos dados extraídos e geração do PDF.
 
 import logging
 
-import pandas as pd
 import streamlit as st
 
-from orcamentos_core.config import COLUNAS_TABELA
 from orcamentos_core.data.orcamentos_repo import OrcamentosRepo
 from orcamentos_core.pdf.gerador import gerar_documento, nova_pasta_trabalho
-from orcamentos_core.utils import formatar_euro, parse_numero
+from orcamentos_core.ui.editor_itens import editor_itens
+from orcamentos_core.utils import formatar_euro
 
 logger = logging.getLogger(__name__)
 
@@ -44,44 +43,20 @@ def passo_2_confirmar(repo: OrcamentosRepo) -> None:
     morada_cliente = st.text_area("Morada do Cliente", value=dados.get("MoradaCliente", ""))
 
     st.markdown("#### Trabalhos e Materiais")
-    st.caption("Reveja as descrições, quantidades e preços. Pode adicionar ou apagar linhas.")
+    st.caption("Reveja as descrições, quantidades e preços de cada item.")
 
-    df = pd.DataFrame(dados.get("Itens", []))
-    for coluna in COLUNAS_TABELA:
-        if coluna not in df.columns:
-            df[coluna] = "" if coluna in ("Designação", "Unidade") else 0.0
-    df = df[COLUNAS_TABELA]
-
-    tabela_editada = st.data_editor(
-        df,
-        num_rows="dynamic",
-        use_container_width=True,
-        hide_index=True,
-        key="editor_tabela",
-        column_config={
-            "Designação": st.column_config.TextColumn("Descrição", width="large"),
-            "Unidade": st.column_config.TextColumn("Unid.", width="small"),
-            "Quantidade": st.column_config.NumberColumn("Qtd.", min_value=0.0, step=0.5, format="%.2f"),
-            "Preço Unitário (€)": st.column_config.NumberColumn(
-                "Preço Unit. (€)", min_value=0.0, step=0.5, format="%.2f"
-            ),
-        },
-    )
-
-    quantidades = tabela_editada["Quantidade"].apply(parse_numero)
-    precos = tabela_editada["Preço Unitário (€)"].apply(parse_numero)
-    total = (quantidades * precos).sum()
+    tabela_editada, total = editor_itens(dados.get("Itens", []), origem=dados)
     st.metric("Total do Orçamento", formatar_euro(total))
 
     pagamento = st.text_input("Condições de Pagamento", value=dados.get("Pagamento", ""))
 
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Voltar", use_container_width=True):
+        if st.button("Voltar", width="stretch"):
             st.session_state.passo = 1
             st.rerun()
     with col2:
-        gerar = st.button("Gerar PDF", use_container_width=True, type="primary")
+        gerar = st.button("Gerar PDF", width="stretch", type="primary")
 
     if gerar:
         if not morada_cliente.strip():

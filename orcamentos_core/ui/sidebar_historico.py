@@ -59,7 +59,7 @@ def mostrar_historico_lateral(repo: OrcamentosRepo) -> None:
                     if st.button(
                         rotulo,
                         key=f"orc_item_{orc.get('id', indice)}",
-                        use_container_width=True,
+                        width="stretch",
                     ):
                         _carregar_orcamento_selecionado(orc)
 

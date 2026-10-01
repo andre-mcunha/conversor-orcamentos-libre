@@ -45,9 +45,9 @@ def passo_1_foto() -> None:
 
     if arquivo_imagem is not None:
         imagem = Image.open(arquivo_imagem)
-        st.image(imagem, caption="Pré-visualização", use_container_width=True)
+        st.image(imagem, caption="Pré-visualização", width="stretch")
 
-        if st.button("Confirmar e Analisar", use_container_width=True, type="primary"):
+        if st.button("Confirmar e Analisar", width="stretch", type="primary"):
             with st.spinner("A analisar o orçamento... alguns segundos."):
                 try:
                     cliente_ia = _obter_cliente_ia_sessao()

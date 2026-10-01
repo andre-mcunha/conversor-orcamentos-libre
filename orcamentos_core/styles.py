@@ -138,6 +138,46 @@ def aplicar_estilo() -> None:
             color: var(--risco);
         }
 
+        /* Botões de ícone dos cartões de itens (mover / duplicar / apagar) */
+        .stButton > button[kind="tertiary"] {
+            min-height: 2.4rem;
+            min-width: 2.4rem;
+            padding: 0.3rem;
+            color: var(--tinta-suave);
+            border-radius: var(--raio);
+        }
+        .stButton > button[kind="tertiary"]:hover:not(:disabled) {
+            color: var(--risco);
+            background: var(--papel);
+        }
+
+        /* Cartões de itens (Passo 2) */
+        .item-numero {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--tinta-suave);
+        }
+        .item-subtotal {
+            text-align: right;
+            font-size: 0.9rem;
+            color: var(--tinta-suave);
+        }
+        .item-subtotal strong {
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 500;
+            color: var(--tinta);
+            margin-left: 0.4rem;
+        }
+        .stNumberInput input {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.02rem;
+        }
+        .stTextArea textarea {
+            line-height: 1.5;
+        }
+
         /* Campos de texto */
         .stTextInput input, .stTextArea textarea {
             font-family: 'Work Sans', sans-serif;

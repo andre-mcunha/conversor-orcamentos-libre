@@ -14,7 +14,7 @@ def ecra_login(supabase) -> None:
     email = st.text_input("Email", placeholder="O seu email", key="login_email")
     senha = st.text_input("Password", type="password", placeholder="A sua password", key="login_senha")
 
-    entrar = st.button("Entrar", use_container_width=True, type="primary")
+    entrar = st.button("Entrar", width="stretch", type="primary")
 
     if entrar:
         if not supabase:

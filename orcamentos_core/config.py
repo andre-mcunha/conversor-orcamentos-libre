@@ -24,7 +24,37 @@ def _obter_segredo(chave_secrets: str, chave_env: str):
         return os.getenv(chave_env)
 
 
-GOOGLE_API_KEY = _obter_segredo("GOOGLE_API_KEY", "GOOGLE_API_KEY")
+def _obter_chave_google():
+    """Procura a chave do Gemini com nomes alternativos e também dentro de
+    secções do secrets.toml (ex: [google]), porque um nome ligeiramente
+    diferente no painel do Streamlit Cloud faz a chave "desaparecer"."""
+    nomes = ("GOOGLE_API_KEY", "GEMINI_API_KEY", "API_KEY")
+    for nome in nomes:
+        valor = _obter_segredo(nome, nome)
+        if valor:
+            return str(valor).strip()
+
+    try:
+        for seccao in st.secrets.values():
+            if hasattr(seccao, "get"):
+                for nome in nomes:
+                    if seccao.get(nome):
+                        return str(seccao.get(nome)).strip()
+    except Exception:
+        pass
+
+    # Só os nomes (nunca os valores), para diagnosticar no log do deploy.
+    try:
+        disponiveis = list(st.secrets.keys())
+    except Exception:
+        disponiveis = []
+    logging.getLogger(__name__).warning(
+        "GOOGLE_API_KEY não encontrada. Secrets disponíveis: %s", disponiveis
+    )
+    return None
+
+
+GOOGLE_API_KEY = _obter_chave_google()
 SUPABASE_URL = _obter_segredo("SUPABASE_URL", "SUPABASE_URL")
 SUPABASE_KEY = _obter_segredo("SUPABASE_KEY", "SUPABASE_KEY")
 

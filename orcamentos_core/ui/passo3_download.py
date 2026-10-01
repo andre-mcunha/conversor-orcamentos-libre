@@ -29,12 +29,12 @@ def passo_3_download() -> None:
             data=ficheiro_pdf,
             file_name=nome_ficheiro,
             mime="application/pdf",
-            use_container_width=True,
+            width="stretch",
             type="primary",
         )
 
     st.markdown("---")
-    if st.button("Criar Novo Orçamento", use_container_width=True):
+    if st.button("Criar Novo Orçamento", width="stretch"):
         reiniciar_sessao()
         st.rerun()
 
